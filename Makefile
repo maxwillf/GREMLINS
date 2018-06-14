@@ -1,4 +1,4 @@
-# Makefile for the Basic Structure Data I Projet "TAD-VECTOR"
+# Makefile for the Basic Structure Data I Projet "GREMLINS"
 #
 # Made by Max William, minor changes by Felipe Ramos
 
