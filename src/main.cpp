@@ -22,5 +22,7 @@ int main( int argc, char **argv ){
 			std::cout << "Some error had happened!" << std::endl;
 		}
 	}
+
+	SLPool p(30);
 	return 0;
 }
