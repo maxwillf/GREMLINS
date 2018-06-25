@@ -31,7 +31,7 @@ SLPool::~SLPool(){
 void * SLPool::Allocate(size_type bytes){
 	
 	auto ptr = m_sentinel->m_next;
-	Block * before_begin = m_sentinel;
+	Block * before_begin = ptr;
 	auto bytes_to_alloc =  (bytes+sizeof(Header))/sizeof(Block);
 
 	while(ptr != nullptr){
@@ -57,33 +57,49 @@ void * SLPool::Allocate(size_type bytes){
 
 void SLPool::Free(void * ptr){
 
-	ptr = reinterpret_cast<Block *> (reinterpret_cast < Header *> (ptr - 1U);
+	ptr = reinterpret_cast<Block *> (reinterpret_cast < Header *> (ptr)) - 1U;
 	
 	auto ptr_aux = m_sentinel->m_next;
+	Block * input_ptr = (Block *) ptr;
+	Block * before_begin = ptr_aux;
+	Block * before_prev = nullptr;
 	Block * ptr_prev = nullptr;
 	Block * ptr_post = nullptr;
 
 	while( ptr_aux != nullptr)
 	{
 		if(ptr_aux < ptr){
-			if(ptr_aux + ptr_aux->m_length == ptr)
-			ptr_prev = ptr_aux + ptr->aux->m_length;
+			if(ptr_aux + ptr_aux->m_length == ptr){
+			before_prev = before_begin;
+			ptr_prev = ptr_aux;
+				}
 		}
 		else if(ptr_aux - ptr_aux->m_length == ptr){
-			ptr_post = ptr_aux + ptr->aux->m_length;
+
+		ptr_post = ptr_aux;
+		before_begin->m_next = before_begin->m_next->m_next;
+		input_ptr->m_length += ptr_aux->m_length;
+		ptr_aux->m_length = 0;
+		}
+		
+		before_begin = ptr_aux;
+		ptr_aux = ptr_aux->m_next;
+		
+		if(ptr_prev != nullptr and ptr_post != nullptr){
+			ptr_prev->m_length += input_ptr->m_length;
+			break;
 		}
 
-		ptr_aux = ptr_aux->m_next;
 	}
-	/* TODO */
-	if(ptr_prev != nullptr and ptr_post != nullptr){
-		ptr_prev->m_next = ptr_post->m_next;
+	
+	if(ptr_aux == nullptr and ptr_prev != nullptr){
+		ptr_prev->m_length += input_ptr->m_length;
 	}
 }
 
 
 
-		void * SLPool::operator new( size_type bytes, SLPool & p ){
+		/*void * SLPool::operator new( size_type bytes, SLPool & p ){
 			Tag* const tag = reinterpret_cast<Tag *> (p.Allocate( bytes * sizeof(Tag)) ); 
 			tag->pool = &p;
 
@@ -94,7 +110,7 @@ void SLPool::Free(void * ptr){
 			tag->pool=nullptr;
 			
 			return(reinterpret_cast<void*>(tag+1U) );
-		}
+		}*/
 /*
 		void SLPool::operator delete(void*arg)noexcept{
 			//We need to subtract 1U(infact,pointer arithmetics)because arg
