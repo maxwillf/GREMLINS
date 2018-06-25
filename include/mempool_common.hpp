@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 #include <iostream> 
-
+#include <new>
 using size_type = size_t;
 
 /** The minimal structure of other storage management classes. */ 
@@ -29,32 +29,27 @@ class SLPool/* : public StoragePool*/
 		
 		struct Header{
 			unsigned int m_length;
-			Header(size_type sz = 0) : m_length(sz) {};
+			Header() : m_length(0u) {};
 		};
 
 
 		struct Tag
 		{
-			int m_id;		// stub
-			size_type m_size;
 			SLPool *pool;
 		};
 
 		struct Block : public Header
 		{
-		//	Header head;
 
 			enum { BlockSize = 16 };
+		
 			union{
-				Header head;
-				union{
-					Block *m_next;
-					char m_raw[BlockSize - sizeof(Header) ];
-				};
-				char m_raw2[BlockSize];
+
+				Block *m_next;
+				char m_raw[ BlockSize - sizeof(Header) ];
 			};
 			
-			Block(size_type sz): Header(sz) ,m_next(nullptr) {}
+			Block( ): Header() ,m_next(nullptr) {}
 
 		};
 
@@ -68,9 +63,9 @@ class SLPool/* : public StoragePool*/
 
 		~SLPool();
 
-	//	void * Allocate (size_type );
+		void * Allocate (size_type );
 	//	void Release (Tag *);
-	//	void Free (void *);
+		void Free (void *);
 		
 	//	void * operator new( size_type bytes, SLPool & p );
 		
