@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 #include <iostream> 
-#include <new>
+// #include <new>
 
 #define debug_constructor true
 #define debug_allocate true
@@ -69,7 +69,7 @@ class SLPool : public StoragePool
 		~SLPool();
 
 		void * Allocate ( size_type );
-	//	void Release (Tag *);
+		void Release( Tag * );
 		void Free (void *);
 };
 

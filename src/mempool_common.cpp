@@ -12,7 +12,7 @@ SLPool::SLPool( size_type bytes ){
 
 
 	if( debug_constructor ){
-		std::cout << "=== DEBUG ==="
+		std::cout << "=== CONSTRUCTOR DEBUG ==="
 			<< "\nSize of block char: " 
 			<< sizeof( char[Block::BlockSize] )
 			<< "\nSize of block *: " << sizeof(Block *)
@@ -20,8 +20,10 @@ SLPool::SLPool( size_type bytes ){
 			<< sizeof( char[Block::BlockSize-sizeof(Header)] )
 			<< "\nSize of block: " << sizeof(Block)
 			<< "\nSize of header: "<< sizeof(Header)
-			<< "\n" << this->m_pool->m_length
-			<< "\n" << this->m_sentinel->m_next->m_length << std::endl;
+			<< "\nthis->m_pool->m_lenght = " << this->m_pool->m_length
+			<< "\nthis->m_sentinel->m_next->m_length = " 
+			<< this->m_sentinel->m_next->m_length 
+			<< "\n=== END OF CONSTRUCTOR DEBUG ==="<< std::endl;
 	}
 }
 
@@ -42,11 +44,13 @@ void * SLPool::Allocate( size_type bytes ){
 			if( m_ptr->m_length == bytes_to_alloc )
 			{
 				before_begin->m_next = m_ptr->m_next;
+				std::cout << ".Allocate() returning #1\n";
 				return reinterpret_cast<Header *> (m_ptr) + (1U);
 			}
 			else
 			{
 				before_begin->m_next = (Block *) ( m_ptr + m_ptr->m_length );
+				std::cout << ".Allocate() returning #2\n";
 				return reinterpret_cast<Header *> (m_ptr) + (1U);
 			}
 
@@ -57,6 +61,8 @@ void * SLPool::Allocate( size_type bytes ){
 
 	throw std::bad_alloc();
 }
+
+void SLPool::Release( Tag * m_tag ){ /* TODO */ }
 
 void SLPool::Free( void * ptr ){
 
@@ -97,33 +103,3 @@ void SLPool::Free( void * ptr ){
 	if( ptr_aux == nullptr and ptr_prev != nullptr )
 		ptr_prev->m_length += input_ptr->m_length;
 }
-
-/*
-
-void * SLPool::operator new( size_type bytes, SLPool & p ){
-	Tag* const tag =
-		reinterpret_cast<Tag *> (p.Allocate( bytes * sizeof(Tag)) ); 
-	tag->pool = &p;
-
-	return (reinterpret_cast<void *> (tag + 1U) );
-}
-void* SLPool::operator new(size_t bytes){//Regula rnew
-	Tag* const tag =
-		reinterpret_cast <Tag *> (malloc(bytes+sizeof(Tag)));
-	tag->pool=nullptr;
-	
-	return(reinterpret_cast<void*>(tag+1U) );
-}
-void SLPool::operator delete(void*arg)noexcept{
-	//We need to subtract 1U(infact,pointer arithmetics)because arg
-	//points to the raw data(second block of information).
-	//The pool id(tag) is located ‘sizeof(Tag)’bytes before.
-	
-	Tag* const tag = reinterpret_cast<Tag*> (arg)-1U;
-	if(nullptr!=tag->pool)//Memory block belongs to a particularGM.
-		tag->pool->Release(tag);
-	else
-		free(tag);//Memory block belongs to the operational system.
-}
-
-*/
