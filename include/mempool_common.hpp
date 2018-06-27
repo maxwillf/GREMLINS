@@ -24,7 +24,7 @@ class StoragePool
 class SLPool : public StoragePool
 {
 	using size_type = size_t;
-	private: 
+	protected: 
 		/** Enumeration for status values. */
 		enum status
 		{
@@ -71,6 +71,14 @@ class SLPool : public StoragePool
 		void * Allocate ( size_type );
 		void Release( Tag * );
 		void Free (void *);
+
+		/* Debug functions */
+		/** Prints the Pool. */
+		void print();
 };
+
+void * operator new( size_t bytes, SLPool & p );
+void * operator new( size_type bytes ) throw (std::bad_alloc);
+void operator delete( void * arg ) noexcept;
 
 #endif

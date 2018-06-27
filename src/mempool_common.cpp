@@ -34,7 +34,7 @@ SLPool::~SLPool(){
 void * SLPool::Allocate( size_type bytes ){
 	Block * m_ptr = this->m_sentinel->m_next;
 
-	Block * before_begin = m_ptr;
+	Block * before_begin = this->m_sentinel;
 	auto bytes_to_alloc = ( bytes + sizeof(Header) ) / sizeof(Block);
 
 	while( m_ptr != nullptr )
@@ -49,7 +49,7 @@ void * SLPool::Allocate( size_type bytes ){
 			}
 			else
 			{
-				before_begin->m_next = (Block *) ( m_ptr + m_ptr->m_length );
+				before_begin->m_next = (Block *)( m_ptr + m_ptr->m_length );
 				std::cout << ".Allocate() returning #2\n";
 				return reinterpret_cast<Header *> (m_ptr) + (1U);
 			}
@@ -102,4 +102,38 @@ void SLPool::Free( void * ptr ){
 	
 	if( ptr_aux == nullptr and ptr_prev != nullptr )
 		ptr_prev->m_length += input_ptr->m_length;
+}
+
+void SLPool::print( void ){
+	
+}
+
+struct Tag { SLPool * pool; };
+void * operator new( size_t bytes, SLPool & p ) /* throw (std::bad_alloc) */
+{
+	Tag * const m_tag = 
+		reinterpret_cast<Tag *> (p.Allocate( bytes + sizeof(Tag) ));
+	m_tag->pool = &p;
+	std::cout << "Returned void *\n";
+	return reinterpret_cast<void *>( m_tag + 1 );
+}
+
+void * operator new( size_type bytes ) throw (std::bad_alloc)
+{
+	Tag * const m_tag = 
+		reinterpret_cast<Tag *>( std::malloc( bytes + sizeof(Tag)) );
+	m_tag->pool = nullptr;
+	std::cout << "Returning void normal!\n";
+	return reinterpret_cast<void *>( m_tag + 1 );
+}
+
+void operator delete( void * arg ) noexcept {
+	Tag * const m_tag = reinterpret_cast<Tag *>( arg ) - 1U;
+	std::cout << "Our delete ivkd\n";
+	if( nullptr != m_tag->pool )
+		// this means it belongs to a particular GM.
+		m_tag->pool->Free( m_tag );
+	else
+		// this means it's a SO memory block
+		std::free( m_tag );
 }
