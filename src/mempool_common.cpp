@@ -33,9 +33,11 @@ SLPool::~SLPool(){
 
 void * SLPool::Allocate( size_type bytes ){
 	Block * m_ptr = this->m_sentinel->m_next;
-
 	Block * before_begin = this->m_sentinel;
 	int blocks_to_alloc = std::ceil(float( bytes + sizeof(Header) ) / sizeof(Block));
+	
+	Block* insert_before = m_sentinel;
+	Block * insert_ordered = m_sentinel->m_next;
 
 	while( m_ptr != nullptr )
 	{
@@ -43,14 +45,27 @@ void * SLPool::Allocate( size_type bytes ){
 		{
 			if( m_ptr->m_length == blocks_to_alloc )
 			{
+				
 				before_begin->m_next = m_ptr->m_next;
 				std::cout << ".Allocate() returning #1\n";
 				return reinterpret_cast<Header *> (m_ptr) + (1U);
 			}
 			else
 			{
-				before_begin->m_next =  m_ptr + blocks_to_alloc  ;
 				std::cout << ".Allocate() returning #2\n";
+				while(insert_ordered != nullptr){
+					if(m_ptr + blocks_to_alloc < insert_ordered){
+						insert_before->m_next = m_ptr+ blocks_to_alloc;
+						(m_ptr+blocks_to_alloc)->m_length = m_ptr->m_length - blocks_to_alloc;
+						break;
+					}
+					insert_before = insert_ordered;
+					insert_ordered =  insert_ordered->m_next;
+				}
+
+				if(insert_ordered == nullptr){
+					insert_before->m_next = m_ptr + blocks_to_alloc;
+				}
 				return reinterpret_cast<Header *> (m_ptr) + (1U);
 			}
 
@@ -76,7 +91,30 @@ void SLPool::Free( void * ptr ){
 	Block * ptr_prev = nullptr;
 	Block * ptr_post = nullptr;
 
-	while( ptr_aux != nullptr )
+	while(ptr_aux != nullptr and ptr_aux->m_next != nullptr){
+
+		if(ptr_aux->m_next > input_ptr){
+			if(ptr_aux + ptr_aux->m_length == input_ptr){
+				ptr_prev = ptr_aux;
+				ptr_aux->m_length += input_ptr->m_length;
+			}
+
+			if(ptr_aux->m_next - input_ptr->m_length == input_ptr){
+				if (ptr_prev == nullptr){
+
+					ptr_aux->m_next = input_ptr;
+					input_ptr->m_length += ptr_aux->m_next->m_length;
+				}
+				else ptr_aux->m_length += ptr_aux->m_next->m_length;
+			}
+			break;
+		}
+		before_begin = ptr_aux;
+		ptr_aux = ptr_aux->m_next;
+	}
+	ptr_aux->m_next = input_ptr;
+
+	/*while( ptr_aux != nullptr )
 	{
 		if( ptr_aux < ptr )
 		{
@@ -107,7 +145,7 @@ void SLPool::Free( void * ptr ){
 	}
 	
 	if( ptr_aux == nullptr and ptr_prev != nullptr )
-		ptr_prev->m_length += input_ptr->m_length;
+		ptr_prev->m_length += input_ptr->m_length; */
 }
 
 void SLPool::print( void ){

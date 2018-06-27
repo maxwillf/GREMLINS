@@ -7,7 +7,7 @@ Target = gremlins 	# Name of the project
 INCLUDES = include
 HEADERS = $(wildcard $(INCLUDES)/*)
 CXX = g++
-CXXFLAGS = -std=c++11 -g -ggdb -I $(INCLUDES)
+CXXFLAGS = -W -Wall -std=c++11 -g -ggdb -I $(INCLUDES)
 DOCS = html latex
 RM = -rm
 
