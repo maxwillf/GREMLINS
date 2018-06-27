@@ -1,5 +1,5 @@
 #include "mempool_common.hpp"
-
+#include <cmath>
 SLPool::SLPool( size_type bytes ){
 	this->m_pool = (Block *) malloc( bytes + sizeof(Block) );
 	this->m_pool->m_length = bytes;
@@ -35,13 +35,13 @@ void * SLPool::Allocate( size_type bytes ){
 	Block * m_ptr = this->m_sentinel->m_next;
 
 	Block * before_begin = this->m_sentinel;
-	auto bytes_to_alloc = ( bytes + sizeof(Header) ) / sizeof(Block);
+	int blocks_to_alloc = std::ceil(float( bytes + sizeof(Header) ) / sizeof(Block));
 
 	while( m_ptr != nullptr )
 	{
-		if( m_ptr->m_length >= bytes_to_alloc )
+		if( m_ptr->m_length >= blocks_to_alloc )
 		{
-			if( m_ptr->m_length == bytes_to_alloc )
+			if( m_ptr->m_length == blocks_to_alloc )
 			{
 				before_begin->m_next = m_ptr->m_next;
 				std::cout << ".Allocate() returning #1\n";
@@ -49,7 +49,7 @@ void * SLPool::Allocate( size_type bytes ){
 			}
 			else
 			{
-				before_begin->m_next = (Block *)( m_ptr + m_ptr->m_length );
+				before_begin->m_next =  m_ptr + blocks_to_alloc  ;
 				std::cout << ".Allocate() returning #2\n";
 				return reinterpret_cast<Header *> (m_ptr) + (1U);
 			}
@@ -62,30 +62,36 @@ void * SLPool::Allocate( size_type bytes ){
 	throw std::bad_alloc();
 }
 
-void SLPool::Release( Tag * m_tag ){ /* TODO */ }
 
 void SLPool::Free( void * ptr ){
 
-	ptr = reinterpret_cast<Block *> (reinterpret_cast <Header *> (ptr)) - 1U;
-	
+	ptr = reinterpret_cast<Block *> (reinterpret_cast <Header *> (ptr) - (1U));
+	std::cout << "ptr" << ptr <<  std::endl;	
+	std::cout << "ptr" <<  m_pool << std::endl;	
+	//if(ptr == m_pool) std::cout << "EQUAL" << std::endl; 
 	Block * ptr_aux = m_sentinel->m_next;
 	Block * input_ptr = (Block *) ptr;
-	Block * before_begin = ptr_aux;
+	Block * before_begin = m_sentinel;
 	Block * before_prev = nullptr;
 	Block * ptr_prev = nullptr;
 	Block * ptr_post = nullptr;
 
 	while( ptr_aux != nullptr )
 	{
-		if(( ptr_aux < ptr ) and ( ptr_aux + ptr_aux->m_length == ptr ))
+		if( ptr_aux < ptr )
 		{
-			before_prev = before_begin;
-			ptr_prev = ptr_aux;
+			if( ptr_aux + input_ptr->m_length == ptr ){
+				before_prev = before_begin;
+				ptr_prev = ptr_aux;
+			}
 		}
-		else if( ptr_aux - ptr_aux->m_length == ptr )
+		else if( ptr_aux - input_ptr->m_length == ptr )
 		{
 			ptr_post = ptr_aux;
-			before_begin->m_next = before_begin->m_next->m_next;
+			if(m_sentinel->m_next != nullptr) {
+				before_begin->m_next = before_begin->m_next->m_next;
+			}
+			else m_sentinel->m_next = input_ptr;
 			input_ptr->m_length += ptr_aux->m_length;
 			ptr_aux->m_length = 0;
 		}
@@ -118,7 +124,7 @@ void * operator new( size_t bytes, SLPool & p ) /* throw (std::bad_alloc) */
 	return reinterpret_cast<void *>( m_tag + 1 );
 }
 
-void * operator new( size_type bytes ) throw (std::bad_alloc)
+void * operator new( size_type bytes ) 
 {
 	Tag * const m_tag = 
 		reinterpret_cast<Tag *>( std::malloc( bytes + sizeof(Tag)) );

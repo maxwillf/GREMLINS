@@ -78,7 +78,7 @@ class SLPool : public StoragePool
 };
 
 void * operator new( size_t bytes, SLPool & p );
-void * operator new( size_type bytes ) throw (std::bad_alloc);
+void * operator new( size_type bytes );
 void operator delete( void * arg ) noexcept;
 
 #endif
