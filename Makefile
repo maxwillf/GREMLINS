@@ -1,38 +1,44 @@
-# Makefile for the Basic Structure Data I Projet "GREMLINS"
-#
-# Made by Max William, minor changes by Felipe Ramos
+# Makefile for the GREMLINS project
 
-# Default Conventions
-Target = gremlins 	# Name of the project
-INCLUDES = include
-HEADERS = $(wildcard $(INCLUDES)/*)
-CXX = g++
-CXXFLAGS = -W -Wall -std=c++11 -g -ggdb -I $(INCLUDES)
-DOCS = html latex
-RM = -rm
+# Author:
+# + Felipe Ramos
+# + Max William
+
+# Makefile conventions
+SHELL = /bin/sh
 
 # Directories
-SRCDIR = src
-OBJDIR = obj
-BINDIR = bin
+INCDIR = ./include
+SRCDIR = ./src
+OBJDIR = ./obj
+BINDIR = ./bin
+DATADIR = ./data
+DOCDIR = ./Documentation
 
-# Some locations
+# Macros
+CC = g++
+CFLAGS = -Wall -g -ggdb -std=c++11 -I. -I$(INCDIR)
+RM = -rm
+PROJ_NAME = gremlins
+DOC_NAME = index.html
+
+HEADERS := $(wildcard $(INCDIR)/*)
 SOURCES := $(wildcard $(SRCDIR)/*.cpp)
 OBJECTS := $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
-
-all: project #docs
+all: project documentation
 
 project: $(OBJECTS) $(HEADERS) | $(BINDIR)
-	$(CXX) $(OBJECTS) $(CXXFLAGS) -o $(BINDIR)/$(Target)
-	@echo "link created: "
-	@ln -sfv $(BINDIR)/$(Target) $(Target)
+	$(CC) $(OBJECTS) $(CFLAGS) -o $(BINDIR)/$(PROJ_NAME)
+	@ln -sfv $(BINDIR)/$(PROJ_NAME) $(PROJ_NAME)
 
-docs: 
-	@doxygen Doxyfile
-	
-$(OBJECTS):	$(OBJDIR)/%.o : $(SRCDIR)/%.cpp $(HEADERS) | $(OBJDIR)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+documentation:
+	@mkdir -p $(DOCDIR)
+	@doxygen config
+	@ln -sfv $(DOCDIR)/html/index.html $(DOC_NAME)
+
+$(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.cpp $(HEADERS) | $(OBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(OBJDIR):
 	@mkdir -p $(OBJDIR)
@@ -40,18 +46,19 @@ $(OBJDIR):
 $(BINDIR):
 	@mkdir -p $(BINDIR)
 
-# PHONY targets
-.PHONY: clean clean_txt clean_docs clean_proj
+# Clean PHONY targets
+.PRONY: clean clean_proj
 
-clean: clean_proj #clean_txt clean_docs
+clean: clean_proj 
 
 clean_proj:
-	$(RM) -r $(OBJDIR)
-	$(RM) -r $(BINDIR)
-	$(RM) $(Target)	
-
-clean_txt: $(TEXT)
-	$(RM) -f $(TEXT)	
-
-clean_docs: $(DOCS)
-	$(RM) -rf $(DOCS)
+	@echo "Removing OBJDIR..."
+	@$(RM) -r $(OBJDIR)
+	@echo "Removing BINDIR..."
+	@$(RM) -r $(BINDIR)
+	@echo "Removing documentation files..."
+	@$(RM) -r Documentation/
+	@echo "Removing symlink..."
+	@$(RM) -f $(PROJ_NAME)
+	@$(RM) -f $(DOC_NAME) 
+	@echo "Clean-up completed!"

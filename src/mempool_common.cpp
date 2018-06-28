@@ -28,7 +28,7 @@ SLPool::SLPool( size_type bytes ){
 			<< "\nthis->m_sentinel->m_next->m_length = " 
 			<< this->m_sentinel->m_next->m_length 
 			<< "\n=== END OF CONSTRUCTOR DEBUG ==="<< std::endl;
-		std::cout << "Cramos debug:\n"
+		std::cout << "POOL Debug:\n"
 			<< "\tsizeof(block) = " << sizeof(Block)
 			<< "\n\tm_pool size (in bytes): "
 			<< ceil(bytes/sizeof(Block)) * sizeof(Block) + sizeof(Block)
@@ -172,28 +172,45 @@ void operator delete( void * arg ) noexcept {
 void SLPool::print( void ){
 	/* gets sentinel->m_next to start printing the free areas */	
 	Block * it = this->m_sentinel->m_next;
-	std::cout << "it->m_length = " << it->m_length << std::endl;
-	std::cout << "m_pool->m_length = " << m_pool->m_length << std::endl;
-	std::cout << "m_n_blocks = " << m_n_blocks << std::endl;
+	if(false){
+		std::cout << "it->m_length = " << it->m_length << std::endl;
+		std::cout << "m_pool->m_length = " << m_pool->m_length << std::endl;
+		std::cout << "m_n_blocks = " << m_n_blocks << std::endl;
+	}
 
-	std::string occp_b = "\e[1;35m[ block ]\e[0m ";
+	/* aliases to make life easier */
+	std::string occp_b = "\e[1;35m[ used ]\e[0m ";
 	std::string free_b = "\e[2m[ free ]\e[0m ";
 
+	/* sum of the free members, useful for getting occupied percentage */
 	long int sum = 0;
 
+	/* print free areas */
 	while( it != nullptr )
 	{
 		sum += it->m_length;
 		for( int i = 0; i < it->m_length; i++ ){
 			std::cout << free_b;
 		}
-		// std::cout << free_b;
-		// std::cout << "it = " << it << std::endl;
-		// std::cout << "it->m_length = " << it->m_length << std::endl;
 		it = it->m_next;
 	}
-	 for( int i = 0; i < m_n_blocks - sum; i++ ){
+
+	/* print occupied areas */
+	for( int i = 0; i < m_n_blocks - sum; i++ ){
 		std::cout << occp_b;
 	}
 	std::cout << std::endl;
+
+	/* print pool info */
+	std::cout << "\n\e[1;36mPOOL info's:\e[0m\n"
+			<< "\tUsed percentage: "
+			<< (double)(m_n_blocks - sum) / m_n_blocks * 100 << "%\t|\t"
+			<< "Block size = " << sizeof(Block) << " bytes"
+			<< "\n\tCapacity of the Pool: "
+			<< m_n_blocks * sizeof(Block) - sizeof(Header)
+			<< " bytes\t|"
+			<< "\tBlocks on the pool: " 
+			<< this->m_n_blocks;
+
+	for( int i = 0; i < 3; i++ ) std::cout << std::endl;
 }

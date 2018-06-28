@@ -1,11 +1,15 @@
 #ifndef _MEMPOOL_COMMON_H_
 #define _MEMPOOL_COMMON_H_
 
+/**
+ *	\file	mempool_common.hpp
+ *	\author	Felipe Ramos e Max William
+ */
+
 #include <stdlib.h>
 #include <iostream> 
-// #include <new>
 
-#define debug_constructor true
+#define debug_constructor false
 #define debug_allocate false
 
 using size_type = size_t;
@@ -21,17 +25,11 @@ class StoragePool
 		virtual void Free( void * ) = 0;
 };
 
+/** An actual implementation of a Memory Pool. */
 class SLPool : public StoragePool
 {
 	using size_type = size_t;
 	protected: 
-		/** Enumeration for status values. */
-		enum status
-		{
-			m_free,
-			m_used
-		};
-		
 		/** Where the info about the block is located. */
 		struct Header{
 			unsigned int m_length;
@@ -41,10 +39,7 @@ class SLPool : public StoragePool
 
 
 		/** Tells which SLPool this block is from. */
-		struct Tag
-		{
-			SLPool *pool;
-		};
+		struct Tag { SLPool *pool; };
 
 		/** Main struct for the data. */
 		struct Block : public Header
@@ -59,13 +54,14 @@ class SLPool : public StoragePool
 			Block(): Header() ,m_next(nullptr) {}
 		};
 
-		unsigned int m_n_blocks;
-		Block *m_pool;
-		Block *m_sentinel;
+		unsigned int m_n_blocks;		//!< Tells the total blocks in the Pool
+		Block *m_pool;					//!< The pool itself
+		Block *m_sentinel;				//!< The sentinel, it's located on the end
 
+		/** Function that will insert a Block on best position. */
 		void insert_ord( Block * ptr )
 		{
-			auto iter = m_sentinel;
+			Block * iter = m_sentinel;
 
 			while(iter->m_next != nullptr)
 			{
@@ -77,6 +73,7 @@ class SLPool : public StoragePool
 					iter = iter->m_next;
 				}
 			}
+
 			if(iter->m_next == nullptr)
 			{
 				iter->m_next = ptr;
@@ -84,23 +81,33 @@ class SLPool : public StoragePool
 				return;
 			}
 		}
-	private:
-		
 	public:
+		/** Constructs the pool with the necessary amount of bytes converted
+		 * into blocks. */
 		explicit SLPool( size_type );
+
+		/** The SLPool destructor */
 		~SLPool();
 
+		/** Responsable for allocating the elements on the pool.
+		 * \return	Returns a void pointer to the client_data address */
 		void * Allocate ( size_type );
-		void Release( Tag * );
+
+		/** Responsible for dealocatting elements of the pool.*/
 		void Free (void *);
 
-		/* Debug functions */
-		/** Prints the Pool. */
+		/** Prints the pool used and free blocks */
 		void print();
 };
 
+/** New operator (with args) overloaded for provide a easy method to allocate
+ * things. */
 void * operator new( size_t bytes, SLPool & p );
+
+/** New operator overloaded for provide a easy method to allocate things. */
 void * operator new( size_type bytes );
+
+/** New operator overloaded for provide a easy method to allocate things. */
 void operator delete( void * arg ) noexcept;
 
 #endif
