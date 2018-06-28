@@ -28,9 +28,13 @@ int main( int argc, char **argv ){
 	std::cout << "SLPool add: " << &p << std::endl;
 
 	int * some_int = new(p) int;
+	int * some_int2 = new(p) int;
+//	int * some_int3 = new(p) int;
 
 	std::cout << "Stub\n";
 
 	delete some_int;
+	delete some_int2;
+	/*delete some_int3;*/
 	return 0;
 }
