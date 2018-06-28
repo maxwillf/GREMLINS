@@ -60,18 +60,18 @@ void * SLPool::Allocate( size_type bytes ){
 				std::cout << ".Allocate() returning #2\n";
 
 				Block * broken = (Block *) m_ptr + blocks_to_alloc;
-				std::cout << "broken & : " <<broken << std::endl;
+			/*	std::cout << "broken & : " <<broken << std::endl;
 				std::cout << "m_ptr & : " << m_ptr << std::endl;
 				std::cout << "m_ptr->m_next & : " << m_ptr->m_next << std::endl;
 				broken->m_next = m_ptr->m_next;
 				std::cout << "Before_begin & : " << before_begin << std::endl;
-				std::cout << "Before_begin_next & : " << before_begin->m_next << std::endl;
+				std::cout << "Before_begin_next & : " << before_begin->m_next << std::endl; */
 			//	m_ptr->m_next = broken;
 				if(broken != m_sentinel) before_begin->m_next = broken;
 				else before_begin->m_next = nullptr;
-				std::cout << "Before_begin & : " << before_begin << std::endl;
+		/*		std::cout << "Before_begin & : " << before_begin << std::endl;
 				std::cout << "Sentinel & : " << m_sentinel << std::endl;
-				std::cout << "Before_begin_next & : " << before_begin->m_next << std::endl;
+				std::cout << "Before_begin_next & : " << before_begin->m_next << std::endl;*/
 				if(before_begin == m_ptr) std::cout << "SHIET" << std::endl;
 
 				broken->m_length = m_ptr->m_length - blocks_to_alloc;
@@ -96,8 +96,10 @@ void * SLPool::Allocate( size_type bytes ){
 					std::cout <<" debug allocate before return  " <<  debug << std::endl;
 					debug = debug->m_next;
 				}*/
-				std::cout << "broken & : " <<broken << std::endl;
-				std::cout << "broken->m_next : " <<broken->m_next << std::endl;
+
+				
+			//	std::cout << "broken & : " <<broken << std::endl;
+			//	std::cout << "broken->m_next : " <<broken->m_next << std::endl;
 				return reinterpret_cast<void*> ( reinterpret_cast <Header *> (m_ptr) + (1U));
 			}
 
@@ -154,15 +156,17 @@ void SLPool::Free( void * ptr ){
 */
 	while( ptr_aux != nullptr )
 	{
-		if( ptr_aux < ptr )
+		if( ptr_aux < input_ptr )
 		{
-			if( ptr_aux + input_ptr->m_length == ptr ){
+			if( ptr_aux + input_ptr->m_length == input_ptr ){
 				before_prev = before_begin;
 				ptr_prev = ptr_aux;
+				std::cout << "here1" << std::endl;
 			}
 		}
-		else if( ptr_aux - input_ptr->m_length == ptr )
+		else if( ptr_aux - input_ptr->m_length == input_ptr )
 		{
+			std::cout << "here1" << std::endl;
 			ptr_post = ptr_aux;
 			if(m_sentinel->m_next != nullptr) {
 				before_begin->m_next = before_begin->m_next->m_next;
@@ -184,6 +188,11 @@ void SLPool::Free( void * ptr ){
 	
 	if( ptr_aux == nullptr and ptr_prev != nullptr )
 		ptr_prev->m_length += input_ptr->m_length; 
+
+	if(m_sentinel->m_next == nullptr){
+
+		m_sentinel->m_next = input_ptr;
+	}
 }
 
 void SLPool::print( void ){
