@@ -63,7 +63,28 @@ class SLPool : public StoragePool
 		Block *m_pool;
 		Block *m_sentinel;
 
+	private:
+	 void insert_ord(Block * ptr){
+		auto iter = m_sentinel;
 
+		while(iter->m_next != nullptr){
+
+			if(ptr < iter->m_next){
+				ptr->m_next;
+				iter->m_next = ptr;
+				return ;
+			}
+
+			else{
+				iter = iter->m_next;
+			}
+		}
+		if(iter->m_next == nullptr){
+			iter->m_next = ptr;
+			ptr->m_next = nullptr;
+			return ;
+		}
+	}
 	public:
 		explicit SLPool( size_type );
 		~SLPool();

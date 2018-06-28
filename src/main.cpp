@@ -29,14 +29,14 @@ int main( int argc, char **argv ){
 
 	int * some_int = new(p) int;
 	int * some_int2 = new(p) int;
-//	int * some_int3 = new(p) int;
 
 	std::cout << "Stub\n";
 
 	delete some_int2;
 	int * some_int4= new(p) int;
 	delete some_int;
-	/*delete some_int3;*/
+	int * some_int3 = new(p) int;
+	delete some_int3;
 	
 	int * some_int5 = new(p) int;
 	delete some_int4;

@@ -51,9 +51,12 @@ void * SLPool::Allocate( size_type bytes ){
 			{
 				std::cout << ".Allocate() returning #2\n";
 				Block * broken = (Block *) m_ptr + blocks_to_alloc;
-				before_begin->m_next = broken;
+				// old policybefore_begin->m_next = broken;
+				// skips a ptr 
+				before_begin->m_next = m_ptr->m_next; 
 				broken->m_length = m_ptr->m_length - blocks_to_alloc;
-				broken->m_next = m_ptr->m_next;
+			//	broken->m_next = m_ptr->m_next;
+				insert_ord(broken);
 				m_ptr->m_length = blocks_to_alloc;
 				return reinterpret_cast<void*> ( reinterpret_cast <Header *> (m_ptr) + (1U));
 
