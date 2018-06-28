@@ -120,9 +120,6 @@ void SLPool::Free( void * ptr ){
 	
 }
 
-void SLPool::print( void ){
-	
-}
 
 struct Tag { SLPool * pool; };
 void * operator new( size_t bytes, SLPool & p ) /* throw (std::bad_alloc) */
@@ -152,4 +149,31 @@ void operator delete( void * arg ) noexcept {
 	else
 		// this means it's a SO memory block
 		std::free( m_tag );
+}
+
+void SLPool::print( void ){
+	/* gets sentinel->m_next to start printing the free areas */	
+	Block * it = this->m_sentinel->m_next;
+	std::cout << "it->m_length = " << it->m_length << std::endl;
+	std::cout << "m_pool->m_length = " << m_pool->m_length << std::endl;
+
+	std::string occp_b = "\e[1;35m[ block ]\e[0m ";
+	std::string free_b = "\e[2m[ free ]\e[0m ";
+
+	long int sum = 0;
+
+	while( it != nullptr )
+	{
+	/*	sum += it->m_length;
+		for( int i = 0; i < it->m_length; i++ ){
+			std::cout << free_b;
+	}*/	
+		std::cout << it << std::endl;
+		std::cout << it->m_length << std::endl;
+		it = it->m_next;
+	}
+ /*	for( int i = 0; i < m_pool->m_length - sum; i++ ){
+		std::cout << occp_b;
+	}*/
+	std::cout << std::endl;
 }

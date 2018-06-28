@@ -23,23 +23,28 @@ int main( int argc, char **argv ){
 			std::cout << "Some error had happened!" << std::endl;
 		}
 	}
-	SLPool p(64);
+	SLPool p(240);
 
 	std::cout << "SLPool add: " << &p << std::endl;
 
 	int * some_int = new(p) int;
 	int * some_int2 = new(p) int;
+	int * some_int4= new(p) int;
+	int * some_int3 = new(p) int;
+	int * some_int5 = new(p) int;
+	p.print();
 
 	std::cout << "Stub\n";
 
 	delete some_int2;
-	int * some_int4= new(p) int;
+	p.print();
 	delete some_int;
-	int * some_int3 = new(p) int;
+	p.print();
 	delete some_int3;
+	p.print();
 	
-	int * some_int5 = new(p) int;
 	delete some_int4;
 	delete some_int5;
+	p.print();
 	return 0;
 }
