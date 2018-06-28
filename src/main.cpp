@@ -10,7 +10,7 @@
 
 int main( int argc, char **argv ){
 	// Driver code for testing the memory manager
-	{
+	if(false){
 		try{
 			sc::vector<int> simpleVector = { 0, 2, 4, 6, 8, 10 };
 			std::cout << "> Print simpleVector" << std::endl;
@@ -23,18 +23,19 @@ int main( int argc, char **argv ){
 			std::cout << "Some error had happened!" << std::endl;
 		}
 	}
-	SLPool p(240);
+	SLPool p(220);
+	std::cout << "\n\nProgram started!\n";
 
-	std::cout << "SLPool add: " << &p << std::endl;
+	// std::cout << "SLPool add: " << &p << std::endl;
 
 	int * some_int = new(p) int;
 	int * some_int2 = new(p) int;
 	int * some_int4= new(p) int;
 	int * some_int3 = new(p) int;
 	int * some_int5 = new(p) int;
+
 	p.print();
 
-	std::cout << "Stub\n";
 
 	delete some_int2;
 	p.print();
@@ -42,9 +43,10 @@ int main( int argc, char **argv ){
 	p.print();
 	delete some_int3;
 	p.print();
-	
 	delete some_int4;
+	p.print();
 	delete some_int5;
 	p.print();
+	std::cout << "\n\nProgram ended!\n";
 	return 0;
 }

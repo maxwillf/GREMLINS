@@ -6,7 +6,7 @@
 // #include <new>
 
 #define debug_constructor true
-#define debug_allocate true
+#define debug_allocate false
 
 using size_type = size_t;
 
@@ -63,28 +63,29 @@ class SLPool : public StoragePool
 		Block *m_pool;
 		Block *m_sentinel;
 
-	private:
-	 void insert_ord(Block * ptr){
-		auto iter = m_sentinel;
+		void insert_ord( Block * ptr )
+		{
+			auto iter = m_sentinel;
 
-		while(iter->m_next != nullptr){
-
-			if(ptr < iter->m_next){
-				ptr->m_next;
+			while(iter->m_next != nullptr)
+			{
+				if(ptr < iter->m_next){
+					ptr->m_next;
+					iter->m_next = ptr;
+					return;
+				} else {
+					iter = iter->m_next;
+				}
+			}
+			if(iter->m_next == nullptr)
+			{
 				iter->m_next = ptr;
-				return ;
-			}
-
-			else{
-				iter = iter->m_next;
+				ptr->m_next = nullptr;
+				return;
 			}
 		}
-		if(iter->m_next == nullptr){
-			iter->m_next = ptr;
-			ptr->m_next = nullptr;
-			return ;
-		}
-	}
+	private:
+		
 	public:
 		explicit SLPool( size_type );
 		~SLPool();

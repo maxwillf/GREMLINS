@@ -1,18 +1,22 @@
 #include "mempool_common.hpp"
 #include <cmath>
 SLPool::SLPool( size_type bytes ){
-	this->m_pool = (Block *) malloc( bytes + sizeof(Block) );
-	this->m_pool->m_length = ((float)bytes+sizeof(Block))/16;
+	/* an useful alias */
+	long int n_blocks = ceil(((double)bytes + sizeof(Header))/sizeof(Block));
+
+	this->m_pool = (Block *) malloc (n_blocks * sizeof(Block) + sizeof(Block));
+	this->m_pool->m_length = n_blocks;
+	this->m_n_blocks = n_blocks;
 	this->m_pool->m_next = nullptr;
 
 	this->m_sentinel = this->m_pool;
-	this->m_sentinel += (bytes / sizeof(Block));
+	this->m_sentinel += n_blocks;
 	this->m_sentinel->m_length = 0;
 	this->m_sentinel->m_next = this->m_pool;
 
 
 	if( debug_constructor ){
-		std::cout << "=== CONSTRUCTOR DEBUG ==="
+		if(false)std::cout << "=== CONSTRUCTOR DEBUG ==="
 			<< "\nSize of block char: " 
 			<< sizeof( char[Block::BlockSize] )
 			<< "\nSize of block *: " << sizeof(Block *)
@@ -24,6 +28,13 @@ SLPool::SLPool( size_type bytes ){
 			<< "\nthis->m_sentinel->m_next->m_length = " 
 			<< this->m_sentinel->m_next->m_length 
 			<< "\n=== END OF CONSTRUCTOR DEBUG ==="<< std::endl;
+		std::cout << "Cramos debug:\n"
+			<< "\tsizeof(block) = " << sizeof(Block)
+			<< "\n\tm_pool size (in bytes): "
+			<< ceil(bytes/sizeof(Block)) * sizeof(Block) + sizeof(Block)
+			<< "\n\tm_pool size (in blocks): " 
+			<< this->m_pool->m_length
+			<< std::endl;
 	}
 }
 
@@ -32,90 +43,100 @@ SLPool::~SLPool(){
 }
 
 void * SLPool::Allocate( size_type bytes ){
-	Block * m_ptr = this->m_sentinel->m_next;
-	Block * before_begin = this->m_sentinel;
-	int blocks_to_alloc = std::ceil(float( bytes + sizeof(Header) ) / sizeof(Block));
+	Block * it = this->m_sentinel->m_next;
+	long int n_blocks = std::ceil(double( bytes + sizeof(Header) ) / sizeof(Block));
 	
-	while( m_ptr != nullptr )
+	/* Iterates through free blocks */
+	while( it != nullptr )
 	{
-		if( m_ptr->m_length >= blocks_to_alloc )
+		/* if the lenght is bigger than what we need... */
+		if( it->m_length >= n_blocks )
 		{
-			if( m_ptr->m_length == blocks_to_alloc )
+			/* if it's equal to what we need, it will be choosen */
+			if( it->m_length == n_blocks )
 			{
-				
-				before_begin->m_next = m_ptr->m_next;
-				std::cout << ".Allocate() returning #1\n";
-				return reinterpret_cast<void*> (reinterpret_cast<Header *> (m_ptr) + (1U));
+				this->m_sentinel->m_next = it->m_next;
+				return reinterpret_cast<void*> (reinterpret_cast<Header *> (it) + (1U));
 			}
+
+			/* we will split into two pieces */
 			else
 			{
-				std::cout << ".Allocate() returning #2\n";
-				Block * broken = (Block *) m_ptr + blocks_to_alloc;
-				// old policybefore_begin->m_next = broken;
+				Block * new_free = (Block *) it + n_blocks;		// new free area
+				// old policythis->m_sentinel->m_next = new_free;
 				// skips a ptr 
-				before_begin->m_next = m_ptr->m_next; 
-				broken->m_length = m_ptr->m_length - blocks_to_alloc;
-			//	broken->m_next = m_ptr->m_next;
-				insert_ord(broken);
-				m_ptr->m_length = blocks_to_alloc;
-				return reinterpret_cast<void*> ( reinterpret_cast <Header *> (m_ptr) + (1U));
+				this->m_sentinel->m_next = it->m_next; 		// update m_sentinel
+				new_free->m_length = it->m_length - n_blocks;	// update lenght
+				//	new_free->m_next = it->m_next;
+				insert_ord( new_free );
+				it->m_length = n_blocks;			// set new lenght
 
+				/* Return void pointer to the raw data */
+				return reinterpret_cast<void*> ( reinterpret_cast <Header *> (it) + (1U));
 			}
-
 		}
-			before_begin = m_ptr;
-			m_ptr = m_ptr->m_next;
+
+		/* updates values */
+		this->m_sentinel = it;
+		it = it->m_next;
 	}
 
+	/* if get's on this far, it's probably something wrong */
 	throw std::bad_alloc();
 }
 
 
-void SLPool::Free( void * ptr ){
+void SLPool::Free( void * f_block ){
 
-	ptr = reinterpret_cast<Block *> (reinterpret_cast <Header *> (ptr) - (1U));
+	f_block = reinterpret_cast<Block *> (reinterpret_cast <Header *> (f_block) - (1U));
 	
-	Block * ptr_aux = m_sentinel->m_next;
-	Block * input_ptr = (Block *) ptr;
-	Block * before_begin = m_sentinel;
+	Block * free_p = m_sentinel->m_next;		// Pointer to next free area
+	Block * orig_p = (Block *) f_block;			// Pointer to block that will be removed
+	Block * pref_free_p = m_sentinel;			// slow pointer from free_p	
 	
-	while(ptr_aux != nullptr){
+	/* iterates on the free areas, stops if finds the last free area */
+	while(free_p != nullptr)
+	{
+		/* set's the current free area as the first one after the orig_p */
+		if(free_p > orig_p)	break;		
 
-		if(ptr_aux > input_ptr){
-			break;		
-		}
-		before_begin = ptr_aux;
-		ptr_aux = ptr_aux->m_next;
+		/* updates values */
+		pref_free_p = free_p;
+		free_p = free_p->m_next;
 	}
 
 
-    // The area is directly between two free areas
-    if (before_begin + before_begin->m_length == input_ptr
-        and input_ptr + input_ptr->m_length == ptr_aux)
+    /* The area is directly between two free areas */
+	/* ...[free][occp][free]... */
+    if (pref_free_p + pref_free_p->m_length == orig_p
+        and orig_p + orig_p->m_length == free_p)
     {
-        before_begin->m_length += ptr_aux->m_length + input_ptr->m_length;
-        before_begin->m_next = ptr_aux->m_next;
+        pref_free_p->m_length += free_p->m_length + orig_p->m_length;
+        pref_free_p->m_next = free_p->m_next;
     }
-    // The area is not directly between any other free areas
-    else if (before_begin + before_begin->m_length != input_ptr
-            and input_ptr + input_ptr->m_length != ptr_aux)
+    /* The area is not directly between any other free areas */
+	/* ...[free]...[occp]...[free]... */
+    else if (pref_free_p + pref_free_p->m_length != orig_p
+            and orig_p + orig_p->m_length != free_p)
     {
-        before_begin->m_next = input_ptr;
-        input_ptr->m_next = ptr_aux;
+        pref_free_p->m_next = orig_p;
+        orig_p->m_next = free_p;
     }
-    // There is a free area directly before and no other
-    else if (before_begin + before_begin->m_length == input_ptr
-            and input_ptr + input_ptr->m_length != ptr_aux)
+    /* There is a free area directly before and no other */
+	/* ...[free][occp]...[free]... */
+    else if (pref_free_p + pref_free_p->m_length == orig_p
+            and orig_p + orig_p->m_length != free_p)
     {
-        before_begin->m_length += input_ptr->m_length;
-        before_begin->m_next = ptr_aux;
+        pref_free_p->m_length += orig_p->m_length;
+        pref_free_p->m_next = free_p;
     }
-    // The area is a free area directly after and no other
+    /* The area is a free area directly after and no other */
+	/* ...[free]...[occp][free]... */
     else
     {
-        input_ptr->m_length += ptr_aux->m_length;
-        before_begin->m_next = input_ptr;
-        input_ptr->m_next = ptr_aux->m_next;
+        orig_p->m_length += free_p->m_length;
+        pref_free_p->m_next = orig_p;
+        orig_p->m_next = free_p->m_next;
     }
 	
 }
@@ -127,7 +148,6 @@ void * operator new( size_t bytes, SLPool & p ) /* throw (std::bad_alloc) */
 	Tag * const m_tag = 
 		reinterpret_cast<Tag *> (p.Allocate( bytes + sizeof(Tag) ));
 	m_tag->pool = &p;
-	std::cout << "Returned void *\n";
 	return reinterpret_cast<void *>( m_tag + 1 );
 }
 
@@ -136,13 +156,11 @@ void * operator new( size_type bytes )
 	Tag * const m_tag = 
 		reinterpret_cast<Tag *>( std::malloc( bytes + sizeof(Tag)) );
 	m_tag->pool = nullptr;
-	std::cout << "Returning void normal!\n";
 	return reinterpret_cast<void *>( m_tag + 1 );
 }
 
 void operator delete( void * arg ) noexcept {
 	Tag * const m_tag = reinterpret_cast<Tag *>( arg ) - 1U;
-	std::cout << "Our delete ivkd\n";
 	if( nullptr != m_tag->pool )
 		// this means it belongs to a particular GM.
 		m_tag->pool->Free( m_tag );
@@ -156,6 +174,7 @@ void SLPool::print( void ){
 	Block * it = this->m_sentinel->m_next;
 	std::cout << "it->m_length = " << it->m_length << std::endl;
 	std::cout << "m_pool->m_length = " << m_pool->m_length << std::endl;
+	std::cout << "m_n_blocks = " << m_n_blocks << std::endl;
 
 	std::string occp_b = "\e[1;35m[ block ]\e[0m ";
 	std::string free_b = "\e[2m[ free ]\e[0m ";
@@ -164,16 +183,17 @@ void SLPool::print( void ){
 
 	while( it != nullptr )
 	{
-	/*	sum += it->m_length;
+		sum += it->m_length;
 		for( int i = 0; i < it->m_length; i++ ){
 			std::cout << free_b;
-	}*/	
-		std::cout << it << std::endl;
-		std::cout << it->m_length << std::endl;
+		}
+		// std::cout << free_b;
+		// std::cout << "it = " << it << std::endl;
+		// std::cout << "it->m_length = " << it->m_length << std::endl;
 		it = it->m_next;
 	}
- /*	for( int i = 0; i < m_pool->m_length - sum; i++ ){
+	 for( int i = 0; i < m_n_blocks - sum; i++ ){
 		std::cout << occp_b;
-	}*/
+	}
 	std::cout << std::endl;
 }
