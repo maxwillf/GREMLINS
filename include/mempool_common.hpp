@@ -3,7 +3,10 @@
 
 /**
  *	\file	mempool_common.hpp
- *	\author	Felipe Ramos e Max William
+ *	\author	Felipe Ramos
+ *	\author Max William
+ *	\version 1.0
+ *	\title	GREMLINS
  */
 
 #include <stdlib.h>
@@ -103,6 +106,10 @@ class SLPool : public StoragePool
 /** New operator (with args) overloaded for provide a easy method to allocate
  * things. */
 void * operator new( size_t bytes, SLPool & p );
+
+/** New operator (with brackets) overloaded for provide a easy method to alloc
+ * things. */
+void * operator new[] ( size_type size, SLPool &p ) /* throw (std::bad_alloc) */;
 
 /** New operator overloaded for provide a easy method to allocate things. */
 void * operator new( size_type bytes );

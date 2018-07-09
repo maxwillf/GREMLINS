@@ -141,34 +141,6 @@ void SLPool::Free( void * f_block ){
 	
 }
 
-
-struct Tag { SLPool * pool; };
-void * operator new( size_t bytes, SLPool & p ) /* throw (std::bad_alloc) */
-{
-	Tag * const m_tag = 
-		reinterpret_cast<Tag *> (p.Allocate( bytes + sizeof(Tag) ));
-	m_tag->pool = &p;
-	return reinterpret_cast<void *>( m_tag + 1 );
-}
-
-void * operator new( size_type bytes ) 
-{
-	Tag * const m_tag = 
-		reinterpret_cast<Tag *>( std::malloc( bytes + sizeof(Tag)) );
-	m_tag->pool = nullptr;
-	return reinterpret_cast<void *>( m_tag + 1 );
-}
-
-void operator delete( void * arg ) noexcept {
-	Tag * const m_tag = reinterpret_cast<Tag *>( arg ) - 1U;
-	if( nullptr != m_tag->pool )
-		// this means it belongs to a particular GM.
-		m_tag->pool->Free( m_tag );
-	else
-		// this means it's a SO memory block
-		std::free( m_tag );
-}
-
 void SLPool::print( void ){
 	/* gets sentinel->m_next to start printing the free areas */	
 	Block * it = this->m_sentinel->m_next;
@@ -213,4 +185,39 @@ void SLPool::print( void ){
 			<< this->m_n_blocks;
 
 	for( int i = 0; i < 3; i++ ) std::cout << std::endl;
+}
+
+struct Tag { SLPool * pool; };
+void * operator new( size_t bytes, SLPool & p ) /* throw (std::bad_alloc) */
+{
+	Tag * const m_tag = 
+		reinterpret_cast<Tag *> (p.Allocate( bytes + sizeof(Tag) ));
+	m_tag->pool = &p;
+	return reinterpret_cast<void *>( m_tag + 1 );
+}
+
+void * operator new[] ( size_type bytes, SLPool & p ){
+	size_type new_size = bytes + sizeof(Tag);
+	Tag * const m_tag = reinterpret_cast<Tag *const>( p.Allocate(new_size) );
+	m_tag->pool = &p;
+	return reinterpret_cast<void *>( m_tag + 1 );
+}
+
+
+void * operator new( size_type bytes ) 
+{
+	Tag * const m_tag = 
+		reinterpret_cast<Tag *>( std::malloc( bytes + sizeof(Tag)) );
+	m_tag->pool = nullptr;
+	return reinterpret_cast<void *>( m_tag + 1 );
+}
+
+void operator delete( void * arg ) noexcept {
+	Tag * const m_tag = reinterpret_cast<Tag *>( arg ) - 1U;
+	if( nullptr != m_tag->pool )
+		// this means it belongs to a particular GM.
+		m_tag->pool->Free( m_tag );
+	else
+		// this means it's a SO memory block
+		std::free( m_tag );
 }
