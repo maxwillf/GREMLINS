@@ -10,19 +10,21 @@
 //!< \author Felipe Ramos and Max William
 
 int main( int argc, char **argv ){
+	try
 	{
-		try{
-			sc::vector<int> simpleVector = { 0, 2, 4, 6, 8, 10 };
-			std::cout << "> Print simpleVector" << std::endl;
-			std::cout << "[ ";
-			for( auto &i : simpleVector ){
-				std::cout << i << " ";
-			}
-			std::cout << "]\n";
-		} catch( ... ){
-			std::cout << "Some error had happened!" << std::endl;
+		sc::vector<int> simpleVector = { 0, 2, 4, 6, 8, 10 };
+		std::cout << "> Print simpleVector" << std::endl;
+		std::cout << "[ ";
+		for( auto &i : simpleVector ){
+			std::cout << i << " ";
 		}
+		std::cout << "]\n";
 	}
+   	catch( ... )
+	{
+		std::cout << "Some error had happened!" << std::endl;
+	}
+
 	SLPool p(300);
 	{
 		int * some_int = new(p) int;
@@ -60,16 +62,16 @@ int main( int argc, char **argv ){
 			int a,b,c;
 		};
 
-		teste* testezin = new (p) teste;
-		testezin->a = 3;
-		testezin->b = 4;
-		testezin->c = 5;
+		teste* just_test = new (p) teste;
+		just_test->a = 3;
+		just_test->b = 4;
+		just_test->c = 5;
 
-		assert(testezin->a == 3);
-		assert(testezin->b == 4);
-		assert(testezin->c == 5);
+		assert(just_test->a == 3);
+		assert(just_test->b == 4);
+		assert(just_test->c == 5);
 
-		delete testezin;
+		delete just_test;
 	}
 
 	{
